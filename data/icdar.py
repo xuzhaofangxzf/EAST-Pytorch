@@ -1,6 +1,7 @@
 # coding: utf-8
 import torch
 import torch.utils.data as data
+from torch.utils.data.dataloader import default_collate
 
 import glob
 import csv
@@ -504,8 +505,10 @@ def generate_rbox(im_size, polys, tags, min_text_size=10):
 
 
 class ICDAR(data.Dataset):
-    def __init__(self, datadir, input_size=512, random_scale=np.array([0.5, 1, 2.0, 3.0]),
+    def __init__(self, datadir, input_size=512,
+                 random_scale=np.array([0.5, 1, 2.0, 3.0]),
                  background_ratio=3./8, min_text_size=10):
+        super(ICDAR, self).__init__()
         self.datadir = datadir
         self.im_fn_list = get_images(self.datadir)
         self.input_size = input_size
@@ -514,22 +517,23 @@ class ICDAR(data.Dataset):
         self.min_text_size = min_text_size
 
     def __len__(self):
-        return len(self.im_fn)
+        return len(self.im_fn_list)
 
     def __getitem__(self, index):
         try:
             im_fn = self.im_fn_list[index]
             # im_name = os.path.basename(im_fn)
             im = cv2.imread(im_fn)
-            if im is None:
-                return None, None, None, None
+            while im is None:
+                im_fn = self.im_fn_list[np.random.randint(0, len(self)-1)]
+                im = cv2.imread(im_fn)
 
             h, w, _ = im.shape
             txt_fn = os.path.splitext(im_fn)[0] + '.txt'
 
             if not os.path.exists(txt_fn):
                 print('text file {} does not exists'.format(txt_fn))
-                return None, None, None, None
+                return self.__getitem__(np.random.randint(0, len(self)-1))
 
             text_polys, text_tags = load_annoataion(txt_fn)
             text_polys, text_tags = check_and_validate_polys(text_polys, text_tags, (h, w))
@@ -545,7 +549,10 @@ class ICDAR(data.Dataset):
                 im, text_polys, text_tags = crop_area(im, text_polys, text_tags, crop_background=True)
                 if text_polys.shape[0] > 1:
                     # cannot find background
-                     return None, None, None, None
+                    # print('fk =>', im_fn)
+                    # return None, None, None, None
+                    return self.__getitem__(np.random.randint(0, len(self)-1))
+
 
                 # padding and resize image
                 new_h, new_w, _ = im.shape
@@ -561,7 +568,7 @@ class ICDAR(data.Dataset):
             else:
                 im, text_polys, text_tags = crop_area(im, text_polys, text_tags, crop_background=False)
                 if text_polys.shape[0] == 0:
-                    return None, None, None, None
+                    return self.__getitem__(np.random.randint(0, len(self)-1))
                 h, w, _ = im.shape
                 new_h, new_w, _ = im.shape
                 max_h_w_i = np.max([new_h, new_w, self.input_size])
@@ -593,7 +600,7 @@ class ICDAR(data.Dataset):
         except Exception as e:
             import traceback
             traceback.print_exc()
-            image, score_map, geo_map, training_mask = None, None, None, None
+            return self.__getitem__(np.random.randint(0, len(self)-1))
 
         return image, score_map, geo_map, training_mask
 
@@ -610,17 +617,22 @@ def collate_fn(batch):
 
     for i in range(len(score_maps)):
         if images[i] is not None:
-            image_list.append(torch.from_numpy(image[i]).permute(2, 0, 1))
+            image_list.append(torch.from_numpy(images[i]).permute(2, 0, 1))
             score_map_list.append(torch.from_numpy(score_maps[i]).permute(2, 0, 1))
             geo_map_list.append(torch.from_numpy(geo_maps[i]).permute(2, 0, 1))
             training_mask_list.append(torch.from_numpy(training_masks[i]).permute(2, 0, 1))
+        else:
+            pass
 
-    images = torch.stack(image_list, 0)
-    score_maps = torch.stack(score_map_list, 0)
-    geo_maps = torch.stack(geo_map_list, 0)
-    training_masks = torch.stack(training_mask_list, 0)
+    batch = [x for x in zip(image_list, score_map_list, geo_map_list, training_mask_list)]
 
-    return images, score_maps, geo_maps, training_masks
+    return default_collate(batch)
+    # images = torch.stack(image_list, 0)
+    # score_maps = torch.stack(score_map_list, 0)
+    # geo_maps = torch.stack(geo_map_list, 0)
+    # training_masks = torch.stack(training_mask_list, 0)
+
+    # return images, score_maps, geo_maps, training_masks
 
 
 if __name__ == "__main__":
