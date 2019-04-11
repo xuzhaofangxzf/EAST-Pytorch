@@ -2,14 +2,14 @@
 EAST的Pytorch版本, paper:https://arxiv.org/abs/1704.03155
 
 ## Thanks
-[argman/EAST](https://github.com/argman/EAST)
-[songdejia](https://github.com/songdejia/EAST)
+- [argman/EAST](https://github.com/argman/EAST)
+- [songdejia](https://github.com/songdejia/EAST)
 
 ## Requirements
-Python2 or Python3
-Pytorch > 0.4.0
-numpy
-shapely
+- Python2 or Python3
+- Pytorch > 0.4.0
+- numpy
+- shapely
 
 ## Imagenet pretrain model
 [resnet50](https://download.pytorch.org/models/resnet50-19c8e357.pth)
