@@ -3,7 +3,7 @@ EAST的Pytorch版本, paper:https://arxiv.org/abs/1704.03155
 
 ## Thanks
 - [argman/EAST](https://github.com/argman/EAST)
-- [songdejia](https://github.com/songdejia/EAST)
+- [songdejia/EAST](https://github.com/songdejia/EAST)
 
 ## Requirements
 - Python2 or Python3
