@@ -2,20 +2,60 @@
 
 import argparse
 import os
+import time
 from data.icdar import collate_fn, ICDAR
+from loss import LossFunc
+from utils import save_checkpoint, AverageMeter
+from models import East
 
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.backends.cudnn as cudnn
+
+def train(dataloader, model, criterion, optimizer, scheduler, use_cuda, epoch):
+    model.train()
+
+    losses = AverageMeter()
+    data_time = AverageMeter()
+    batch_time = AverageMeter()
+    end = time.time()
+
+    for i, (img, score_map, geo_map, training_mask) in enumerate(trainloader):
+        data_time.update(time.time() - end)
+
+        if use_cuda:
+            img, score_map, geo_map, training_mask = img.cuda(), score_map.cuda(),
+                                                     geo_map.cuda(), training_mask.cuda()
+
+        f_score, f_geometry = model(img)
+        loss = criterion(score_map, f_score, geo_map, f_geometry, training_mask)
+        losses.update(loss.item(), img.size(0))
+
+        scheduler.step()
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        batch_time.update(time.time() - end)
+        end = time.time()
+
+        print('[{0}][{1}/{2}] Loss {loss.val:.4f} Avg Loss {loss.avg:.4f})\n'.format(
+            epoch, i, len(train_loader), loss=losses))
+
 
 def main():
     parser = argparse.ArgumentParser('EAST')
     parser.add_argument('dataset', metavar='DIR',
         help='train dataset dir')
+    parser.add_argument('pretrain', metavar='PTH',
+        help='pretrain model')
     parser.add_argument('-b', '--batch-size', type=int, default=14,
         help='batch size per GPU')
     parser.add_argument('-l', '--lr', type=float, default=0.0001,
         help='lr')
+    parser.add_argument('-wd', type=float, default=1e-5,
+        help='weight decay')
     parser.add_argument('--epochs', type=int, default=500,
         help='epochs')
     parser.add_argument('-j', '--num-workers', default=4,
@@ -31,6 +71,8 @@ def main():
         help='min text size(default 10)')
     parser.add_argument('--gpus', type=str, default='0',
         help='gpu ids')
+    parser.add_argument('--checkpoint', type=str, default='./checkpoint',
+        help='checkpoint dir(default=./checkpoint)')
 
     args = parser.parse_args()
 
@@ -44,14 +86,36 @@ def main():
                              shuffle=True, collate_fn=collate_fn, num_workers=args.num_workers)
 
     # model
-    pass
+    model = East(args.pretrain)
+    model = nn.DataParallel(model)
+    model = model.cuda()
+    cudnn.benchmark = True
 
     # criterion
+    criterion = LossFunc()
 
     # optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10000, gamma=0.94)
+
+    # resume
+    start_epoch = 0
 
     # step
+    for epoch in range(start_epoch, args,epochs):
+        # TRAIN
+        train(dataloader, model, criterion, optimizer, scheduler, True, epoch)
 
+        if epoch % 100 == 0:
+            is_best = True
+            state = {'epoch': epoch,
+                'state_dict': model.stare_dict(),
+                'model': model.module.state_dict(),
+                'optimizer': optimizer.state_dict(),
+                'is_best': is_best
+                }
+
+            save_checkpoint(state, args.checkpoint)
 
 
 if __name__ == "__main__":
