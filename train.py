@@ -109,16 +109,15 @@ def main():
         # TRAIN
         train(trainloader, model, criterion, optimizer, scheduler, True, epoch)
 
-        if epoch % 100 == 0:
-            is_best = True
-            state = {'epoch': epoch,
-                'state_dict': model.state_dict(),
-                'model': model.module.state_dict(),
-                'optimizer': optimizer.state_dict(),
-                'is_best': is_best
-                }
+        is_best = True
+        state = {'epoch': epoch,
+            'state_dict': model.state_dict(),
+            'model': model.module.state_dict(),
+            'optimizer': optimizer.state_dict(),
+            'is_best': is_best
+            }
 
-            save_checkpoint(state, args.checkpoint)
+        save_checkpoint(state, args.checkpoint)
 
 
 if __name__ == "__main__":
