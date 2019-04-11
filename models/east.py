@@ -184,7 +184,7 @@ def mean_image_subtraction(images, means=[123.68, 116.78, 103.94]):
 
 
 class East(nn.Module):
-    def __init__(self, pretrained_model):
+    def __init__(self, pretrained_model=None):
         super(East, self).__init__()
         self.resnet = resnet50(pretrained_model)
         self.conv1 = nn.Conv2d(3072, 128, 1)
