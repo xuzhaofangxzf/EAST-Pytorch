@@ -58,7 +58,7 @@ def main():
         help='weight decay')
     parser.add_argument('--epochs', type=int, default=500,
         help='epochs')
-    parser.add_argument('-j', '--num-workers', default=4,
+    parser.add_argument('-j', '--num-workers', type=int, default=4,
         help='dataloader workers')
     parser.add_argument('-s', '--input-size', type=int, default=512,
         help='input image size(default 512)' +
