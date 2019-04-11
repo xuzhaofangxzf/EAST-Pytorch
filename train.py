@@ -25,7 +25,7 @@ def train(dataloader, model, criterion, optimizer, scheduler, use_cuda, epoch):
         data_time.update(time.time() - end)
 
         if use_cuda:
-            img, score_map, geo_map, training_mask = img.cuda(), score_map.cuda(),
+            img, score_map, geo_map, training_mask = img.cuda(), score_map.cuda(), \
                                                      geo_map.cuda(), training_mask.cuda()
 
         f_score, f_geometry = model(img)
