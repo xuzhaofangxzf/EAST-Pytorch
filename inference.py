@@ -4,12 +4,14 @@ import argparse
 import os
 import cv2
 import time
+import json
 import glob
 import numpy as np
 
 import torch
 from utils import restore_rectangle
 from models import East
+import lanms
 
 def get_images(data_dir):
     files = []
@@ -167,6 +169,10 @@ def predict(model, data_dir, result_file, max_side_len=2400):
         res = {}
         res['url'] = im_fn
         res['texts'] = []
+
+        if boxes is None:
+            continue
+
         for box in boxes:
             box = sort_poly(box.astype(np.int32))
             if np.linalg.norm(box[0] - box[1]) < 5 or np.linalg.norm(box[3]-box[0]) < 5:
