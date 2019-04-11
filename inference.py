@@ -136,7 +136,7 @@ def predict(model, data_dir, result_file, max_side_len=2400):
 
     f = open(result_file, 'w')
     for idx, im_fn in enumerate(im_fn_list):
-        im_resized, ratio_h, ratio_w = preprocess(im_fn, max_side_len)
+        im_resized, (ratio_h, ratio_w) = preprocess(im_fn, max_side_len)
         if im_resized is None:
             continue
 
