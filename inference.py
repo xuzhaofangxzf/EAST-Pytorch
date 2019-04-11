@@ -63,6 +63,7 @@ def preprocess(im_fn, max_side_len=2400):
 
     im_resized, (ratio_h, ratio_w) = resize_image(im, max_side_len)
     im_resized = im_resized.astype(np.float32)
+    im_resized = im_resized.transpose(2, 0, 1)
     im_resized = torch.from_numpy(im_resized)
     im_resized = im_resized.cuda()
     im_resized = im_resized.unsqueeze(0)
@@ -196,6 +197,7 @@ if __name__ == '__main__':
 
     checkpoint = torch.load(args.model)
     model = East()
+    model = model.cuda()
     model.load_state_dict(checkpoint['model'])
 
     predict(model, args.datadir, args.output)
