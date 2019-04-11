@@ -21,7 +21,7 @@ def train(dataloader, model, criterion, optimizer, scheduler, use_cuda, epoch):
     batch_time = AverageMeter()
     end = time.time()
 
-    for i, (img, score_map, geo_map, training_mask) in enumerate(trainloader):
+    for i, (img, score_map, geo_map, training_mask) in enumerate(dataloader):
         data_time.update(time.time() - end)
 
         if use_cuda:
@@ -40,8 +40,10 @@ def train(dataloader, model, criterion, optimizer, scheduler, use_cuda, epoch):
         batch_time.update(time.time() - end)
         end = time.time()
 
-        print('[{0}][{1}/{2}] Loss {loss.val:.4f} Avg Loss {loss.avg:.4f})\n'.format(
-            epoch, i, len(train_loader), loss=losses))
+        print('Epoch [{0}][{1}/{2}] Loss {loss.val:.4f} Avg Loss {loss.avg:.4f}'.format(
+            epoch, i, len(dataloader), loss=losses))
+        print('DataTime {data_time.avg:.4f} BatchTime {batch_time.avg:.4f}'.format(
+            data_time=data_time, batch_time=batch_time))
 
 
 def main():
@@ -102,9 +104,9 @@ def main():
     start_epoch = 0
 
     # step
-    for epoch in range(start_epoch, args,epochs):
+    for epoch in range(start_epoch, args.epochs):
         # TRAIN
-        train(dataloader, model, criterion, optimizer, scheduler, True, epoch)
+        train(trainloader, model, criterion, optimizer, scheduler, True, epoch)
 
         if epoch % 100 == 0:
             is_best = True
