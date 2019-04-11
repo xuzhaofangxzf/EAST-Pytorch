@@ -161,7 +161,7 @@ def resnet50(pretrained_model=None, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
     model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
-    if pretrained:
+    if pretrained_model:
         model.load_state_dict(torch.load(pretrained_model))
         # model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
